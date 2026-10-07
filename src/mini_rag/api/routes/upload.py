@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, UploadFile, HTTPException
-from fastapi import APIRouter, Depends, UploadFile
 
 from mini_rag.api.dependencies import get_file_service
 from mini_rag.services.file_service import FileService
