@@ -33,3 +33,23 @@ class FileTooLargeError(MiniRagError):
 
     status_code: int = 413
     message: str = "File size exceeded"
+
+class ProjectFileNotFoundError(MiniRagError):
+    """Raised when the requested file does not exist in the project folder."""
+
+    status_code: int = 404
+    message: str = "File not found"
+
+
+class UnsupportedProcessingTypeError(MiniRagError):
+    """Raised when the file extension has no loader for processing."""
+
+    status_code: int = 415
+    message: str = "File type cannot be processed"
+
+
+class EmptyProcessingResultError(MiniRagError):
+    """Raised when processing finishes but produces no chunks."""
+
+    status_code: int = 422
+    message: str = "No content could be extracted from the file"

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, UploadFile
 
-from mini_rag.api.dependencies import get_file_service
+from mini_rag.api.dependencies import get_file_service, get_process_service
+from mini_rag.schemas.process import ProcessRequest
 from mini_rag.services.file_service import FileService
+from mini_rag.services.process_service import ProcessService
 
 
 
@@ -25,4 +27,25 @@ async def upload_data(
     return {
         "message": "File uploaded successfully",
         "file_id": stored_filename,
+    }
+
+
+@router.post("/process/{project_id}")
+def process_data(
+    project_id: str,
+    request: ProcessRequest,
+    process_service: ProcessService = Depends(get_process_service),
+):
+    chunks = process_service.process_file(
+        project_id=project_id,
+        file_id=request.file_id,
+        chunk_size=request.chunk_size,
+        overlap_size=request.overlap_size,
+    )
+    return {
+        "message": "File processed successfully",
+        "chunks_count": len(chunks),
+        "chunks": [
+            {"content": c.page_content, "metadata": c.metadata} for c in chunks
+        ],
     }
