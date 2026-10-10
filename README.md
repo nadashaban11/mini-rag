@@ -13,7 +13,7 @@ It uploads files into project-scoped folders, then loads and splits them into ch
 - Health check: `GET /api/v1/health`
 
 ## Requirements
-- Python 3.11+
+- Python 3.14+
 - [uv](https://docs.astral.sh/uv/)
 
 ## Setup
@@ -94,11 +94,10 @@ Success:
 
 ## Structure
 ```
-src/mini_rag/
 ├── api/        # routers, dependencies
 ├── core/       # settings + exceptions
+├── schemas/    # request models (pydantic)
 └── services/   # FileService (validation, storage), ProcessService (load, chunk)
-└── Schemas/    # request models (pydantic)
 ```
 
 ## Roadmap
