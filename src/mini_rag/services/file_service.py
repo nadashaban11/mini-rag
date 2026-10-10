@@ -5,6 +5,7 @@ import string
 import aiofiles
 from fastapi import UploadFile
 from ..core.config import Settings
+from ..core.exceptions import InvalidProjectIdError, InvalidFileTypeError, FileTooLargeError
 
 
 class FileService:
@@ -31,20 +32,19 @@ class FileService:
         return stored_filename
 
 
-    def validate_file(self, content_type, file_size):
+    def validate_file(self, content_type, file_size) -> None:
         if content_type not in self.settings.FILE_ALLOWED_TYPES:
-            return False, "File type is not supported"
+            raise InvalidFileTypeError()
         max_size_bytes = self.settings.FILE_MAX_SIZE * 1024 * 1024
-        if file_size > max_size_bytes:
-            return False, "File size exceeded"
-        return True, "valid file"
+        if file_size is not None and file_size > max_size_bytes:
+            raise FileTooLargeError()
 
     def validate_project_id(self, project_id: str) -> bool:
         return bool(re.fullmatch(r"[a-zA-Z0-9_-]+", project_id))
 
     def get_project_directory(self, project_id: str) -> Path:
         if not self.validate_project_id(project_id):
-            raise ValueError("Invalid project ID")
+            raise InvalidProjectIdError()
 
         project_dir = self.files_dir / project_id
         project_dir.mkdir(parents=True, exist_ok=True)
