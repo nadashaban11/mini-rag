@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.params import Depends
+from fastapi import APIRouter, Depends
 from mini_rag.api.dependencies import get_session
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession

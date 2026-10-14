@@ -5,7 +5,7 @@ services:
     container_name: postgres
 
     env_file:
-      - .env
+    - ../.env
 
     ports:
       - "5433:5432"
