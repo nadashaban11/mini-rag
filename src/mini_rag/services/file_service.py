@@ -22,14 +22,12 @@ class FileService:
             file.filename,
             project_id,
         )
-
+        size = 0
         async with aiofiles.open(file_path, "wb") as buffer:
-            while chunk := await file.read(
-                self.settings.FILE_DEFAULT_CHUNK_SIZE
-            ):
+            while chunk := await file.read(self.settings.FILE_DEFAULT_CHUNK_SIZE):
+                size += len(chunk)
                 await buffer.write(chunk)
-
-        return stored_filename
+        return stored_filename, size
 
 
     def validate_file(self, content_type, file_size) -> None:
