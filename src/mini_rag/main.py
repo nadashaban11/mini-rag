@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from mini_rag.api.routes.health import router as health_router
-from mini_rag.api.routes.upload import router as upload_router
+from mini_rag.api.routes.data import router as data_router
 from mini_rag.core.config import get_settings
 from mini_rag.core.database import create_engine, create_session_factory
 from mini_rag.core.exceptions import MiniRagError
@@ -31,4 +31,4 @@ async def mini_rag_error_handler(request: Request, exc: MiniRagError):
 
 
 app.include_router(health_router)
-app.include_router(upload_router)
+app.include_router(data_router)
