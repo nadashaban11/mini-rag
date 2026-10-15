@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 import secrets
+import shutil
 import string
 import aiofiles
 from fastapi import UploadFile
@@ -72,7 +73,16 @@ class FileService:
         characters = string.ascii_letters + string.digits
         return "".join(secrets.choice(characters) for _ in range(length))
 
+    def delete_file(self, project_id: str, stored_filename: str) -> None:
+        if not self.validate_project_id(project_id):
+            raise InvalidProjectIdError()
+        path = self.files_dir / project_id / Path(stored_filename).name
+        path.unlink(missing_ok=True)
 
+    def delete_project_directory(self, project_id: str) -> None:
+        if not self.validate_project_id(project_id):
+            raise InvalidProjectIdError()
+        shutil.rmtree(self.files_dir / project_id, ignore_errors=True)
 
     
     

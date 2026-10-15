@@ -7,13 +7,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from ..core.exceptions import (
     EmptyProcessingResultError,
-    InvalidProjectIdError,
     ProjectFileNotFoundError,
     UnsupportedProcessingTypeError,
 )
-from ..models import Chunk, Resource
-from ..repositories import ChunkRepository, ProjectRepository, ResourceRepository
+from ..models import Chunk
+from ..repositories import ChunkRepository
 from .file_service import FileService
+from .resource_service import ResourceService
 
 
 class LoaderSpec(NamedTuple):
@@ -31,29 +31,12 @@ class ProcessService:
     def __init__(
         self,
         file_service: FileService,
-        project_repo: ProjectRepository,
-        resource_repo: ResourceRepository,
+        resource_service: ResourceService,
         chunk_repo: ChunkRepository,
     ):
         self.file_service = file_service
-        self.project_repo = project_repo
-        self.resource_repo = resource_repo
+        self.resource_service = resource_service
         self.chunk_repo = chunk_repo
-
-    async def get_resource(self, project_id: str, file_id: str) -> Resource:
-        if not self.file_service.validate_project_id(project_id):
-            raise InvalidProjectIdError()
-
-        project = await self.project_repo.get_by_project_id(project_id)
-        if project is None:
-            raise ProjectFileNotFoundError()
-
-        resource = await self.resource_repo.get_by_stored_filename(
-            project.id, Path(file_id).name
-        )
-        if resource is None:
-            raise ProjectFileNotFoundError()
-        return resource
 
     def get_file_path(self, project_id: str, stored_filename: str) -> Path:
         project_dir = self.file_service.get_project_directory(project_id)
@@ -84,7 +67,7 @@ class ProcessService:
         chunk_size: int,
         overlap_size: int,
     ) -> int:
-        resource = await self.get_resource(project_id, file_id)
+        resource = await self.resource_service.get(project_id, file_id)
         file_path = self.get_file_path(project_id, resource.stored_filename)
 
         docs = await asyncio.to_thread(

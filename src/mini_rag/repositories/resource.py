@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Resource
@@ -25,3 +25,6 @@ class ResourceRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    async def delete(self, resource_uuid: uuid.UUID) -> None:
+        await self.session.execute(delete(Resource).where(Resource.id == resource_uuid))

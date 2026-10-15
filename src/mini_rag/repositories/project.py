@@ -1,4 +1,6 @@
-from sqlalchemy import select
+import uuid
+
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Project
@@ -21,3 +23,6 @@ class ProjectRepository:
             self.session.add(project)
             await self.session.flush()
         return project
+
+    async def delete(self, project_uuid: uuid.UUID) -> None:
+        await self.session.execute(delete(Project).where(Project.id == project_uuid))

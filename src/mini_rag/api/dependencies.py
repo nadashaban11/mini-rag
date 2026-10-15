@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import Depends, Request
+from mini_rag.services.project_service import ProjectService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mini_rag.core.config import Settings, get_settings
@@ -50,10 +51,16 @@ def get_resource_service(
 ) -> ResourceService:
     return ResourceService(file_service, project_repo, resource_repo)
 
-def get_process_service(
+def get_project_service(
     file_service: FileService = Depends(get_file_service),
     project_repo: ProjectRepository = Depends(get_project_repository),
-    resource_repo: ResourceRepository = Depends(get_resource_repository),
+) -> ProjectService:
+    return ProjectService(file_service, project_repo)
+
+
+def get_process_service(
+    file_service: FileService = Depends(get_file_service),
+    resource_service: ResourceService = Depends(get_resource_service),
     chunk_repo: ChunkRepository = Depends(get_chunk_repository),
 ) -> ProcessService:
-    return ProcessService(file_service, project_repo, resource_repo, chunk_repo)
+    return ProcessService(file_service, resource_service, chunk_repo)

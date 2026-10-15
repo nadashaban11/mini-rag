@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, UploadFile
 
-from mini_rag.api.dependencies import get_process_service, get_resource_service
+from mini_rag.api.dependencies import (
+    get_process_service,
+    get_project_service,
+    get_resource_service,
+)
 from mini_rag.schemas.process import ProcessRequest
 from mini_rag.services.process_service import ProcessService
+from mini_rag.services.project_service import ProjectService
 from mini_rag.services.resource_service import ResourceService
 
 router = APIRouter(
@@ -40,3 +45,20 @@ async def process_data(
         "message": "File processed successfully",
         "chunks_count": chunks_count,
     }
+
+
+@router.delete("/{project_id}/files/{file_id}", status_code=204)
+async def delete_file(
+    project_id: str,
+    file_id: str,
+    resource_service: ResourceService = Depends(get_resource_service),
+):
+    await resource_service.delete(project_id, file_id)
+
+
+@router.delete("/{project_id}", status_code=204)
+async def delete_project(
+    project_id: str,
+    project_service: ProjectService = Depends(get_project_service),
+):
+    await project_service.delete(project_id)

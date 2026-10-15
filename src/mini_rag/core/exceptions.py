@@ -53,3 +53,9 @@ class EmptyProcessingResultError(MiniRagError):
 
     status_code: int = 422
     message: str = "No content could be extracted from the file"
+
+class ProjectNotFoundError(MiniRagError):
+    """Raised when the requested project does not exist."""
+
+    status_code: int = 404
+    message: str = "Project not found"
