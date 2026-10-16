@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import Depends, Request
+from mini_rag.llm.interface import LLMInterface
 from mini_rag.services.project_service import ProjectService
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,3 +65,10 @@ def get_process_service(
     chunk_repo: ChunkRepository = Depends(get_chunk_repository),
 ) -> ProcessService:
     return ProcessService(file_service, resource_service, chunk_repo)
+
+def get_generation_llm(request: Request) -> LLMInterface:
+    return request.app.state.generation_llm
+
+
+def get_embedding_llm(request: Request) -> LLMInterface:
+    return request.app.state.embedding_llm
