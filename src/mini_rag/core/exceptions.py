@@ -59,3 +59,23 @@ class ProjectNotFoundError(MiniRagError):
 
     status_code: int = 404
     message: str = "Project not found"
+
+class LLMNotConfiguredError(MiniRagError):
+    """Raised when an LLM provider is selected but its settings are missing."""
+
+    status_code: int = 500
+    message: str = "LLM provider is not configured"
+
+
+class UnsupportedLLMProviderError(MiniRagError):
+    """Raised when the selected LLM provider has no implementation."""
+
+    status_code: int = 500
+    message: str = "LLM provider is not supported"
+
+
+class LLMProviderError(MiniRagError):
+    """Raised when a call to the LLM provider fails."""
+
+    status_code: int = 502
+    message: str = "The LLM provider request failed"
