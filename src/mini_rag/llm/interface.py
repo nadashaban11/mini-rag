@@ -32,6 +32,10 @@ class LLMInterface(ABC):
         pass
 
     @abstractmethod
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        pass
+
+    @abstractmethod
     def construct_prompt(self, prompt: str, role: str) -> dict:
         pass
 
