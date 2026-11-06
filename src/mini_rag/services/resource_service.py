@@ -20,21 +20,24 @@ class ResourceService:
         self.resource_repo = resource_repo
 
     async def upload(self, project_id: str, file: UploadFile) -> Resource:
-        self.file_service.validate_file(file.content_type, file.size)
         if not self.file_service.validate_project_id(project_id):
             raise InvalidProjectIdError()
+
+        original_filename = self.file_service.validate_filename(file.filename)
+        self.file_service.validate_file(file.content_type, file.size)
 
         project = await self.project_repo.get_or_create(project_id)
         stored_filename, size = await self.file_service.save_file(
             file=file,
             project_id=project_id,
+            original_filename=original_filename,
         )
 
         return await self.resource_repo.add(
             Resource(
                 project_uuid=project.id,
                 stored_filename=stored_filename,
-                original_filename=file.filename,
+                original_filename=original_filename,
                 content_type=file.content_type,
                 size=size,
             )

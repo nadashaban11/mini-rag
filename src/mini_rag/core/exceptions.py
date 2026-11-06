@@ -79,3 +79,10 @@ class LLMProviderError(MiniRagError):
 
     status_code: int = 502
     message: str = "The LLM provider request failed"
+
+
+class InvalidFileNameError(MiniRagError):
+    """Raised when the file name is invalid or empty."""
+
+    status_code: int = 400
+    message: str = "Invalid file name"

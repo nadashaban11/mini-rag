@@ -6,21 +6,29 @@ import string
 import aiofiles
 from fastapi import UploadFile
 from ..core.config import Settings
-from ..core.exceptions import InvalidProjectIdError, InvalidFileTypeError, FileTooLargeError
+from ..core.exceptions import (
+    FileTooLargeError,
+    InvalidFileNameError,
+    InvalidFileTypeError,
+    InvalidProjectIdError,
+)
 
 
 class FileService:
+    MAX_STORED_FILENAME_BYTES = 246
+
     def __init__(self, settings: Settings):
         self.settings = settings
         self.files_dir = Path("assets/files")
 
     async def save_file(
-    self,
-    file: UploadFile,
-    project_id: str,
-    ):
+        self,
+        file: UploadFile,
+        project_id: str,
+        original_filename: str,
+    ) -> tuple[str, int]:
         file_path, stored_filename = self.generate_unique_filepath(
-            file.filename,
+            original_filename,
             project_id,
         )
         size = 0
@@ -41,6 +49,15 @@ class FileService:
     def validate_project_id(self, project_id: str) -> bool:
         return bool(re.fullmatch(r"[a-zA-Z0-9_-]+", project_id))
 
+    def validate_filename(self, orig_file_name: str | None) -> str:
+        if not orig_file_name:
+            raise InvalidFileNameError()
+
+        file_name = Path(orig_file_name.strip()).name
+        if not file_name or file_name in {".", ".."}:
+            raise InvalidFileNameError()
+        return file_name
+
     def get_project_directory(self, project_id: str) -> Path:
         if not self.validate_project_id(project_id):
             raise InvalidProjectIdError()
@@ -49,23 +66,28 @@ class FileService:
         project_dir.mkdir(parents=True, exist_ok=True)
         return project_dir
     
-    def generate_unique_filepath(self, orig_file_name: str, project_id: str):
+    def generate_unique_filepath(
+        self, orig_file_name: str, project_id: str
+    ) -> tuple[Path, str]:
         random_key = self.generate_random_string()
         project_path = self.get_project_directory(project_id)
 
-        cleaned_file_name = self.get_clean_file_name(
-            orig_file_name=orig_file_name
-        )
+        cleaned_file_name = self.get_clean_file_name(orig_file_name=orig_file_name)
         new_file_path = project_path / f"{random_key}_{cleaned_file_name}"
         while new_file_path.exists():
             random_key = self.generate_random_string()
             new_file_path = project_path / f"{random_key}_{cleaned_file_name}"
 
-        return new_file_path, random_key + "_" + cleaned_file_name
+        return new_file_path, new_file_path.name
 
-    def get_clean_file_name(self, orig_file_name: str):
-        cleaned_file_name = re.sub(r'[^\w. ]','', orig_file_name.strip())
+    def get_clean_file_name(self, orig_file_name: str) -> str:
+        cleaned_file_name = re.sub(r"[^\w. ]", "", orig_file_name.strip())
         cleaned_file_name = cleaned_file_name.replace(" ", "_")
+
+        if not cleaned_file_name or set(cleaned_file_name) == {"."}:
+            raise InvalidFileNameError()
+        if len(cleaned_file_name.encode("utf-8")) > self.MAX_STORED_FILENAME_BYTES:
+            raise InvalidFileNameError("File name is too long")
 
         return cleaned_file_name
 
