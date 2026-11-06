@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import re
 import secrets
@@ -13,6 +14,8 @@ from ..core.exceptions import (
     InvalidProjectIdError,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class FileService:
     MAX_STORED_FILENAME_BYTES = 246
@@ -20,6 +23,10 @@ class FileService:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.files_dir = Path("assets/files")
+
+    @property
+    def max_size_bytes(self) -> int:
+        return self.settings.FILE_MAX_SIZE * 1024 * 1024
 
     async def save_file(
         self,
@@ -31,19 +38,35 @@ class FileService:
             original_filename,
             project_id,
         )
+        max_size_bytes = self.max_size_bytes
         size = 0
-        async with aiofiles.open(file_path, "wb") as buffer:
-            while chunk := await file.read(self.settings.FILE_DEFAULT_CHUNK_SIZE):
-                size += len(chunk)
-                await buffer.write(chunk)
+        saved = False
+        try:
+            async with aiofiles.open(file_path, "wb") as buffer:
+                while chunk := await file.read(
+                    self.settings.FILE_DEFAULT_CHUNK_SIZE
+                ):
+                    if size + len(chunk) > max_size_bytes:
+                        raise FileTooLargeError()
+                    size += len(chunk)
+                    await buffer.write(chunk)
+            saved = True
+        finally:
+            if not saved:
+                try:
+                    file_path.unlink(missing_ok=True)
+                except OSError as exc:
+                    logger.warning(
+                        "Failed to remove partial upload %s: %s", file_path, exc
+                    )
         return stored_filename, size
 
-
-    def validate_file(self, content_type, file_size) -> None:
+    def validate_file(
+        self, content_type: str | None, file_size: int | None
+    ) -> None:
         if content_type not in self.settings.FILE_ALLOWED_TYPES:
             raise InvalidFileTypeError()
-        max_size_bytes = self.settings.FILE_MAX_SIZE * 1024 * 1024
-        if file_size is not None and file_size > max_size_bytes:
+        if file_size is not None and file_size > self.max_size_bytes:
             raise FileTooLargeError()
 
     def validate_project_id(self, project_id: str) -> bool:
