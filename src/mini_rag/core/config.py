@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ..llm.enums import LLMEnums
@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     GENERATION_MODEL_ID: str
     EMBEDDING_MODEL_ID: str
     EMBEDDING_SIZE: int
+    EMBEDDING_BATCH_SIZE: int = Field(default=50, gt=0)
     GENERATION_DEFAULT_MAX_TOKENS: int = 1000
     GENERATION_DEFAULT_TEMPERATURE: float = 0.1
 

@@ -12,6 +12,7 @@ from ..core.exceptions import (
 )
 from ..models import Chunk
 from ..repositories import ChunkRepository
+from .embedding_service import EmbeddingService
 from .file_service import FileService
 from .resource_service import ResourceService
 
@@ -33,10 +34,12 @@ class ProcessService:
         file_service: FileService,
         resource_service: ResourceService,
         chunk_repo: ChunkRepository,
+        embedding_service: EmbeddingService,
     ):
         self.file_service = file_service
         self.resource_service = resource_service
         self.chunk_repo = chunk_repo
+        self.embedding_service = embedding_service
 
     def get_file_path(self, project_id: str, stored_filename: str) -> Path:
         project_dir = self.file_service.get_project_directory(project_id)
@@ -76,12 +79,17 @@ class ProcessService:
         if not docs:
             raise EmptyProcessingResultError()
 
+        embeddings = await self.embedding_service.embed_texts(
+            [doc.page_content for doc in docs]
+        )
+
         await self.chunk_repo.delete_by_resource(resource.id)
         chunks = [
             Chunk(
                 resource_uuid=resource.id,
                 chunk_order=i,
                 chunk_text=doc.page_content,
+                chunk_embedding=embeddings[i],
                 chunk_metadata={
                     k: v for k, v in doc.metadata.items() if k == "page"
                 },
