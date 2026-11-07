@@ -98,6 +98,30 @@ class OpenAIProvider(LLMInterface):
             raise LLMProviderError("OpenAI returned no embedding")
         return response.data[0].embedding
 
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        if not self.embedding_model_id:
+            raise LLMNotConfiguredError("Embedding model for OpenAI was not set")
+        if not texts:
+            return []
+        try:
+            response = await self.client.embeddings.create(
+                model=self.embedding_model_id,
+                input=texts,
+            )
+        except Exception as exc:
+            logger.exception("OpenAI embedding failed")
+            raise LLMProviderError() from exc
+        if not response.data or len(response.data) != len(texts):
+            raise LLMProviderError(
+                f"OpenAI returned {len(response.data)} embeddings "
+                f"for {len(texts)} inputs"
+            )
+
+        items = sorted(response.data, key=lambda item: item.index)
+        if [item.index for item in items] != list(range(len(texts))):
+            raise LLMProviderError("OpenAI returned unexpected embedding indexes")
+        return [item.embedding for item in items]
+
     def construct_prompt(self, prompt: str, role: str) -> dict:
         return {"role": role, "content": prompt.strip()}
 

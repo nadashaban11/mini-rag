@@ -11,6 +11,7 @@ from mini_rag.repositories import (
     ProjectRepository,
     ResourceRepository,
 )
+from mini_rag.services.embedding_service import EmbeddingService
 from mini_rag.services.file_service import FileService
 from mini_rag.services.process_service import ProcessService
 from mini_rag.services.resource_service import ResourceService
@@ -24,6 +25,13 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
         except Exception:
             await session.rollback()
             raise
+
+def get_generation_llm(request: Request) -> LLMInterface:
+    return request.app.state.generation_llm
+
+
+def get_embedding_llm(request: Request) -> LLMInterface:
+    return request.app.state.embedding_llm
 
 def get_file_service(
     settings: Settings = Depends(get_settings),
@@ -59,16 +67,22 @@ def get_project_service(
     return ProjectService(file_service, project_repo)
 
 
+def get_embedding_service(
+    embedding_llm: LLMInterface = Depends(get_embedding_llm),
+    settings: Settings = Depends(get_settings),
+) -> EmbeddingService:
+    return EmbeddingService(
+        embedding_llm,
+        batch_size=settings.EMBEDDING_BATCH_SIZE,
+        embedding_size=settings.EMBEDDING_SIZE,
+    )
+
 def get_process_service(
     file_service: FileService = Depends(get_file_service),
     resource_service: ResourceService = Depends(get_resource_service),
     chunk_repo: ChunkRepository = Depends(get_chunk_repository),
+    embedding_service: EmbeddingService = Depends(get_embedding_service),
 ) -> ProcessService:
-    return ProcessService(file_service, resource_service, chunk_repo)
-
-def get_generation_llm(request: Request) -> LLMInterface:
-    return request.app.state.generation_llm
-
-
-def get_embedding_llm(request: Request) -> LLMInterface:
-    return request.app.state.embedding_llm
+    return ProcessService(
+        file_service, resource_service, chunk_repo, embedding_service
+    )
